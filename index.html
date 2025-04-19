@@ -1,37 +1,63 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>Delivering Together at BPL – Minimal</title>
+  <title>Delivering Together Map</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
-  <link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet">
+
+  <!-- Mapbox GL JS -->
+  <link
+    href="https://api.mapbox.com/mapbox-gl-js/v3.1.0/mapbox-gl.css"
+    rel="stylesheet"/>
+  <script src="https://api.mapbox.com/mapbox-gl-js/v3.1.0/mapbox-gl.js"></script>
+
+  <!-- Mapbox Geocoder (AFTER GL JS) -->
+  <link
+    href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v5.1.2/mapbox-gl-geocoder.css"
+    rel="stylesheet"/>
+  <script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v5.1.2/mapbox-gl-geocoder.min.js"></script>
+
   <style>
-    body { margin: 0; padding: 0; }
-    #map { width: 100vw; height: 100vh; }
+    html,body{margin:0;padding:0;height:100%}
+    #map{position:fixed;top:0;bottom:0;width:100%}
+    #locate{position:absolute;top:10px;left:10px;z-index:1;padding:8px;background:#ffeb3b;border-radius:4px;cursor:pointer;}
+    #geocoder{position:absolute;top:50px;left:10px;z-index:1;width:90vw;}
   </style>
 </head>
 <body>
-<div id="map"></div>
-<script>
-  mapboxgl.accessToken = 'pk.eyJ1IjoiYWFyb25pbmJyb29rbHluIiwiYSI6ImNtOGowMmZ0dzBjMDgycnB4eWdhZW9nZ2sifQ.Z70awiKsIraT8Mfh-T_iAg';
+  <div id="map"></div>
+  <button id="locate">📍 Where am I?</button>
+  <div id="geocoder"></div>
 
-  const map = new mapboxgl.Map({
-    container: 'map',
-    style: 'mapbox://styles/aaroninbrooklyn/cm8ynjmie006x01s43bs01wo2',
-    center: [-73.951257, 40.622065],
-    zoom: 10.5
-  });
+  <script>
+    // 1. Initialize map
+    mapboxgl.accessToken = 'pk.eyJ1IjoiYWFyb25pbmJyb29rbHluIiwiYSI6ImNtOGowMmZ0dzBjMDgycnB4eWdhZW9nZ2sifQ.Z70awiKsIraT8Mfh-T_iAg';
+    const map = new mapboxgl.Map({
+      container: 'map',
+      style: 'mapbox://styles/aaroninbrooklyn/cm8ynjmie006x01s43bs01wo2',
+      center: [-73.97,40.68],
+      zoom: 11
+    });
+    map.addControl(new mapboxgl.NavigationControl(), 'top-right');
 
-  map.addControl(new mapboxgl.NavigationControl());
+    // 2. Add geocoder
+    const geocoder = new MapboxGeocoder({
+      accessToken: mapboxgl.accessToken,
+      mapboxgl: mapboxgl,
+      marker: false,
+      placeholder: 'Search address'
+    });
+    map.addControl(geocoder, 'top-left');
 
-  map.on('load', () => {
-    console.log('Map loaded successfully!');
-  });
-
-  map.on('error', (e) => {
-    console.error('Mapbox error:', e.error);
-  });
-</script>
+    // 3. Geolocate button
+    document.getElementById('locate').onclick = () => {
+      if (!navigator.geolocation) return alert('No geolocation');
+      navigator.geolocation.getCurrentPosition(p => {
+        const c = [p.coords.longitude,p.coords.latitude];
+        map.flyTo({center:c,zoom:14});
+        new mapboxgl.Marker().setLngLat(c).addTo(map);
+      });
+    };
+  </script>
 </body>
 </html>
