@@ -1,196 +1,37 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="utf-8" />
-  <title>BPL Delivering Together Map</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-
-  <!-- 1) Mapbox GL JS core -->
-  <link 
-    href="https://api.mapbox.com/mapbox-gl-js/v3.1.0/mapbox-gl.css" 
-    rel="stylesheet"
-  />
-  <script src="https://api.mapbox.com/mapbox-gl-js/v3.1.0/mapbox-gl.js"></script>
-
-  <!-- 2) Mapbox Geocoder (after mapbox-gl) -->
-  <link 
-    href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v5.1.2/mapbox-gl-geocoder.css" 
-    rel="stylesheet"
-  />
-  <script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v5.1.2/mapbox-gl-geocoder.min.js"></script>
-
+  <meta charset="utf-8">
+  <title>Delivering Together at BPL – Minimal</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
+  <link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet">
   <style>
-    html, body {margin:0; padding:0; height:100%; font-family:sans-serif;}
-    #map {position:fixed; top:0; bottom:0; width:100%; z-index:0;}
-
-    /* Instructions */
-    #instructions {
-      position:absolute; top:10px; right:10px;
-      width:220px; max-width:90vw; z-index:10;
-    }
-    #instructions img {width:100%; border-radius:6px;}
-
-    /* Locate button */
-    #locate-btn {
-      position:absolute; top:10px; left:10px;
-      padding:12px; background:#ffeb3b; border:2px solid #000;
-      border-radius:5px; font-size:16px; font-weight:bold;
-      cursor:pointer; z-index:10; box-shadow:2px 2px 4px rgba(0,0,0,0.3);
-      max-width:90vw;
-    }
-
-    /* Legend */
-    .legend {
-      position:absolute; bottom:10px; left:10px;
-      background:#ffeb3b; padding:10px; border:2px solid #000;
-      border-radius:5px; font-size:14px; color:#000;
-      box-shadow:2px 2px 4px rgba(0,0,0,0.2); z-index:10;
-      max-width:90vw;
-    }
-    .legend-row {
-      display:flex; align-items:center; margin-bottom:6px;
-    }
-    .legend-row img {
-      height:22px; margin-right:8px;
-    }
-
-    @media (max-width:600px) {
-      #instructions { bottom:100px; top:auto; width:90vw; }
-      .legend { font-size:13px; padding:8px; }
-      .legend-row img { height:20px; }
-      #locate-btn { font-size:14px; padding:10px; }
-    }
+    body { margin: 0; padding: 0; }
+    #map { width: 100vw; height: 100vh; }
   </style>
 </head>
 <body>
-  <div id="map"></div>
+<div id="map"></div>
+<script>
+  mapboxgl.accessToken = 'pk.eyJ1IjoiYWFyb25pbmJyb29rbHluIiwiYSI6ImNtOGowMmZ0dzBjMDgycnB4eWdhZW9nZ2sifQ.Z70awiKsIraT8Mfh-T_iAg';
 
-  <!-- Instructions GIF -->
-  <div id="instructions">
-    <img src="https://raw.githubusercontent.com/aaroninbrooklyn/delivering/main/dtlanguage.gif" alt="Instructions" />
-  </div>
+  const map = new mapboxgl.Map({
+    container: 'map',
+    style: 'mapbox://styles/aaroninbrooklyn/cm8ynjmie006x01s43bs01wo2',
+    center: [-73.951257, 40.622065],
+    zoom: 10.5
+  });
 
-  <!-- Where am I -->
-  <div id="locate-btn">📍 Where am I?</div>
+  map.addControl(new mapboxgl.NavigationControl());
 
-  <!-- Legend -->
-  <div class="legend">
-    <strong>Legend</strong>
-    <div class="legend-row">
-      <img src="https://aaroninbrooklyn.github.io/delivering/bike-parking.svg" alt="Bike"> Bike Parking
-    </div>
-    <div class="legend-row">
-      <img src="https://aaroninbrooklyn.github.io/delivering/toilet-map.svg" alt="Restroom"> Public Restroom
-    </div>
-    <div class="legend-row">
-      <img src="https://aaroninbrooklyn.github.io/delivering/delivering-together.svg" alt="Branch"> Delivering Together Branch
-    </div>
-  </div>
+  map.on('load', () => {
+    console.log('Map loaded successfully!');
+  });
 
-  <script>
-    // Initialize Map
-    mapboxgl.accessToken = 'pk.eyJ1IjoiYWFyb25pbmJyb29rbHluIiwiYSI6ImNtOGowMmZ0dzBjMDgycnB4eWdhZW9nZ2sifQ.Z70awiKsIraT8Mfh-T_iAg';
-    const map = new mapboxgl.Map({
-      container: 'map',
-      style: 'mapbox://styles/aaroninbrooklyn/cm8ynjmie006x01s43bs01wo2',
-      center: [-73.97, 40.68],
-      zoom: 11
-    });
-    map.addControl(new mapboxgl.NavigationControl(), 'top-right');
-
-    // Add Geocoder control
-    map.addControl(new MapboxGeocoder({
-      accessToken: mapboxgl.accessToken,
-      mapboxgl,
-      marker: false,
-      placeholder: 'Search address'
-    }), 'top-left');
-
-    // Custom SVG URLs
-    const icons = {
-      'bike-parking': 'https://aaroninbrooklyn.github.io/delivering/bike-parking.svg',
-      'toilet-map':   'https://aaroninbrooklyn.github.io/delivering/toilet-map.svg',
-      'delivering-together': 'https://aaroninbrooklyn.github.io/delivering/delivering-together.svg'
-    };
-
-    // Load icons, then override layers & enable hover
-    function setupSymbols() {
-      let loaded = 0, keys = Object.keys(icons);
-      keys.forEach(k => {
-        map.loadImage(icons[k], (err,img) => {
-          if(!err && img && !map.hasImage(k)) map.addImage(k,img);
-          if(++loaded===keys.length){
-            // Only override if layer exists
-            const layers = [
-              {id:'bike-parking',      icon:'bike-parking'},
-              {id:'public-restrooms',   icon:'toilet-map'},
-              {id:'bpldeliverstrogether-28xcka', 
-               iconExp:[
-                 'match',['get','Delivering Together'],
-                 'Delivering Together','delivering-together',
-                 'BPL Branch','bklyn-logo',
-                 /*fallback*/'star'
-               ]
-              }
-            ];
-            layers.forEach(l=>{
-              if(map.getLayer(l.id)){
-                if(l.icon) map.setLayoutProperty(l.id,'icon-image',l.icon);
-                else map.setLayoutProperty(l.id,'icon-image',l.iconExp);
-              }
-            });
-            enableHover();
-          }
-        });
-      });
-    }
-
-    // Hover popups
-    const popup = new mapboxgl.Popup({closeButton:false,closeOnClick:false});
-    function enableHover(){
-      map.on('mousemove', e=>{
-        const feats = map.queryRenderedFeatures(e.point,{
-          layers:['bike-parking','public-restrooms','bpldeliverstrogether-28xcka']
-        });
-        if(feats.length){
-          let f=feats[0],p=f.properties,html='';
-          if(f.layer.id==='bpldeliverstrogether-28xcka'){
-            html=`<strong>${p.branch}</strong><br>${p.address}<br>${p.phone}<br><em>${p["Delivering Together"]}</em>
-                  <br><strong>Hours:</strong><br>
-                  Mon: ${p.Monday}<br>Tue: ${p.Tuesday}<br>Wed: ${p.Wednesday}
-                  <br>Thu: ${p.Thursday}<br>Fri: ${p.Friday}<br>Sat: ${p.Saturday}
-                  <br>Sun: ${p.Sunday}`;
-          } else if(f.layer.id==='public-restrooms'){
-            html=`<strong>Public Restroom</strong><br>${p.facility_name}<br>Open: ${p.open}`;
-          } else {
-            html=`<strong>Bike Rack</strong><br>${p.IFOAddress}<br>Type: ${p.RackType}<br>Program: ${p.Program}`;
-          }
-          popup.setLngLat(e.lngLat).setHTML(html).addTo(map);
-          map.getCanvas().style.cursor='pointer';
-        } else {
-          popup.remove();
-          map.getCanvas().style.cursor='';
-        }
-      });
-    }
-
-    // Geolocation
-    let userMarker;
-    function locateUser(){
-      if(!navigator.geolocation) return;
-      navigator.geolocation.getCurrentPosition(pos=>{
-        const c=[pos.coords.longitude,pos.coords.latitude];
-        map.flyTo({center:c,zoom:14});
-        userMarker?.remove();
-        userMarker=new mapboxgl.Marker({color:'blue'}).setLngLat(c).addTo(map);
-      });
-    }
-    document.getElementById('locate-btn').onclick=locateUser;
-
-    map.on('load',()=>{
-      setupSymbols();
-      locateUser();
-    });
-  </script>
+  map.on('error', (e) => {
+    console.error('Mapbox error:', e.error);
+  });
+</script>
 </body>
 </html>
