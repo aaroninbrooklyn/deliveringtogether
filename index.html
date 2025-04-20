@@ -1,18 +1,18 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <title>BPL Delivering Together (Marker Version)</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="utf-8" />
+  <title>Delivering Together Map</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
 
-  <!-- Mapbox GL JS -->
+  <!-- 1) Mapbox GL JS core -->
   <link
     href="https://api.mapbox.com/mapbox-gl-js/v3.1.0/mapbox-gl.css"
     rel="stylesheet"
   />
   <script src="https://api.mapbox.com/mapbox-gl-js/v3.1.0/mapbox-gl.js"></script>
 
-  <!-- Geocoder plugin via unpkg (v4.7.2) -->
+  <!-- 2) Geocoder plugin v4.7.2 -->
   <link
     href="https://unpkg.com/@mapbox/mapbox-gl-geocoder@4.7.2/dist/mapbox-gl-geocoder.css"
     rel="stylesheet"
@@ -21,13 +21,17 @@
 
   <style>
     body,html { margin:0; padding:0; height:100%; overflow:hidden; }
-    #map { position:fixed; top:0; bottom:0; width:100%; }
-    #locate { position:absolute; top:10px; left:10px; z-index:1;
+    #map { position:absolute; top:0; bottom:0; width:100%; }
+    #locate {
+      position:absolute; top:10px; left:10px; z-index:1;
       padding:8px 12px; background:#ffeb3b; border:2px solid #000;
-      border-radius:4px; font-weight:bold; cursor:pointer;
+      border-radius:4px; cursor:pointer; font-weight:bold;
       box-shadow:2px 2px 4px rgba(0,0,0,0.2);
     }
-    #geocoder { position:absolute; top:50px; left:10px; z-index:1; width:90vw; max-width:300px; }
+    #geocoder {
+      position:absolute; top:50px; left:10px; z-index:1;
+      width:90vw; max-width:300px;
+    }
   </style>
 </head>
 <body>
@@ -36,97 +40,37 @@
   <div id="geocoder"></div>
 
   <script>
-  //––– 1) Map init
-  mapboxgl.accessToken = 'pk.eyJ1IjoiYWFyb25pbmJyb29rbHluIiwiYSI6ImNtOGowMmZ0dzBjMDgycnB4eWdhZW9nZ2sifQ.Z70awiKsIraT8Mfh-T_iAg';
-  const map = new mapboxgl.Map({
-    container: 'map',
-    style: 'mapbox://styles/mapbox/light-v11',
-    center: [-73.97,40.68],
-    zoom:11
-  });
-  map.addControl(new mapboxgl.NavigationControl(), 'top-right');
-
-  //––– 2) Geocoder
-  const geocoder = new MapboxGeocoder({
-    accessToken: mapboxgl.accessToken,
-    mapboxgl: mapboxgl,
-    marker: false,
-    placeholder: 'Search address…'
-  });
-  map.addControl(geocoder, 'top-left');
-
-  //––– 3) Load your vector data as GeoJSON sources and place DOM markers
-  map.on('load', async () => {
-    // replace these URLs with your own Mapbox Tileset → GeoJSON endpoints
-    const urls = {
-      'bike-parking':   'https://api.mapbox.com/v4/aaroninbrooklyn.bicycle_parking_20250401_cn1akk/tilequery/-73.97,40.68.json?access_token='+mapboxgl.accessToken,
-      'public-restrooms':'https://api.mapbox.com/v4/aaroninbrooklyn.public_restrooms_20250405_5turqf/tilequery/-73.97,40.68.json?access_token='+mapboxgl.accessToken,
-      'branches':       'https://api.mapbox.com/v4/aaroninbrooklyn.bpldeliverstogether_28xcka/tilequery/-73.97,40.68.json?access_token='+mapboxgl.accessToken
-    };
-
-    // icons (SVG elements)
-    const svgs = {
-      'bike-parking': '<img src="https://aaroninbrooklyn.github.io/delivering/bike-parking.svg" style="width:24px"/>',
-      'public-restrooms': '<img src="https://aaroninbrooklyn.github.io/delivering/toilet-map.svg" style="width:24px"/>',
-      'delivering-together':'<img src="https://aaroninbrooklyn.github.io/delivering/delivering-together.svg" style="width:24px"/>',
-      'bklyn-logo':'<img src="https://aaroninbrooklyn.github.io/delivering/bklyn-logo.svg" style="width:24px"/>'
-    };
-
-    // helper to add markers
-    async function addMarkers(name, url, hoverFn) {
-      const resp = await fetch(url);
-      const json = await resp.json();
-      json.features.forEach(f => {
-        // choose icon: branches have two types
-        let el = document.createElement('div');
-        if (name==='branches') {
-          el.innerHTML = f.properties['Delivering Together']==='Delivering Together'
-            ? svgs['delivering-together'] : svgs['bklyn-logo'];
-        } else {
-          el.innerHTML = svgs[name];
-        }
-        el.style.cursor = 'pointer';
-        new mapboxgl.Marker(el)
-          .setLngLat(f.geometry.coordinates)
-          .addTo(map)
-          .getElement().addEventListener('mouseenter', e=>{
-            hoverFn(f.properties, e, map);
-          });
-      });
-    }
-
-    // hover popup
-    const popup = new mapboxgl.Popup({closeButton:false,offset:15});
-    const hoverFns = {
-      'bike-parking': (p,e,map)=>popup
-        .setLngLat(e.lngLat)
-        .setHTML(`<strong>${p.IFOAddress}</strong><br>${p.Program}<br>${p.RackType}`)
-        .addTo(map),
-      'public-restrooms': (p,e,map)=>popup
-        .setLngLat(e.lngLat)
-        .setHTML(`<strong>${p.facility_name}</strong><br>Open: ${p.open}`)
-        .addTo(map),
-      'branches': (p,e,map)=>popup
-        .setLngLat(e.lngLat)
-        .setHTML(`<strong>${p.branch}</strong><br>${p.address}<br>${p.phone}<br>
-          Hours:<br>Mon: ${p.Monday} … Sun: ${p.Sunday}`)
-        .addTo(map)
-    };
-
-    await addMarkers('bike-parking', urls['bike-parking'], hoverFns['bike-parking']);
-    await addMarkers('public-restrooms', urls['public-restrooms'], hoverFns['public-restrooms']);
-    await addMarkers('branches', urls['branches'], hoverFns['branches']);
-  });
-
-  //––– 4) “Where am I?” button
-  document.getElementById('locate').onclick = () => {
-    if (!navigator.geolocation) return alert('No geolocation');
-    navigator.geolocation.getCurrentPosition(pos => {
-      const c = [pos.coords.longitude,pos.coords.latitude];
-      map.flyTo({center:c,zoom:14});
-      new mapboxgl.Marker({color:'blue'}).setLngLat(c).addTo(map);
+    // Initialize map
+    mapboxgl.accessToken = 'pk.eyJ1IjoiYWFyb25pbmJyb29rbHluIiwiYSI6ImNtOGowMmZ0dzBjMDgycnB4eWdhZW9nZ2sifQ.Z70awiKsIraT8Mfh-T_iAg';
+    const map = new mapboxgl.Map({
+      container: 'map',
+      style: 'mapbox://styles/aaroninbrooklyn/cm8ynjmie006x01s43bs01wo2',
+      center: [-73.97, 40.68],
+      zoom: 11
     });
-  };
+    map.addControl(new mapboxgl.NavigationControl(), 'top-right');
+
+    // Add Geocoder
+    map.addControl(new MapboxGeocoder({
+      accessToken: mapboxgl.accessToken,
+      mapboxgl: mapboxgl,
+      marker: false,
+      placeholder: 'Search address…'
+    }), 'top-left');
+
+    // Geolocate on load and via button
+    function locate() {
+      if (!navigator.geolocation) return alert('Geolocation not supported');
+      navigator.geolocation.getCurrentPosition(pos => {
+        const coords = [pos.coords.longitude, pos.coords.latitude];
+        map.flyTo({ center: coords, zoom: 14 });
+        new mapboxgl.Marker({ color: 'blue' })
+          .setLngLat(coords)
+          .addTo(map);
+      }, () => alert('Location permission denied'));
+    }
+    map.on('load', locate);
+    document.getElementById('locate').onclick = locate;
   </script>
 </body>
 </html>
