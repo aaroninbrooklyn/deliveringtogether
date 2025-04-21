@@ -1,0 +1,68 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Delivering Together Map</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <link href="https://api.mapbox.com/mapbox-gl-js/v3.1.0/mapbox-gl.css" rel="stylesheet" />
+  <script src="https://api.mapbox.com/mapbox-gl-js/v3.1.0/mapbox-gl.js"></script>
+  <style>
+    body, html { margin: 0; padding: 0; height: 100%; }
+    #map { position: absolute; top: 0; bottom: 0; width: 100%; }
+    #locate {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      z-index: 1;
+      background: #fff;
+      padding: 8px 12px;
+      border: 1px solid #333;
+      border-radius: 4px;
+      font-weight: bold;
+      box-shadow: 1px 1px 3px rgba(0,0,0,0.3);
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+  <button id="locate">📍 Where am I?</button>
+
+  <script>
+    mapboxgl.accessToken = 'pk.eyJ1IjoiYWFyb25pbmJyb29rbHluIiwiYSI6ImNtOGowMmZ0dzBjMDgycnB4eWdhZW9nZ2sifQ.Z70awiKsIraT8Mfh-T_iAg';
+
+    const map = new mapboxgl.Map({
+      container: 'map',
+      style: 'mapbox://styles/aaroninbrooklyn/cm8ynjmie006x01s43bs01wo2',
+      center: [-73.9513, 40.6221],
+      zoom: 10.28
+    });
+
+    map.addControl(new mapboxgl.NavigationControl(), 'top-right');
+
+    function locateUser() {
+      if (!navigator.geolocation) {
+        alert("Geolocation not supported by your browser.");
+        return;
+      }
+
+      navigator.geolocation.getCurrentPosition(
+        position => {
+          const coords = [position.coords.longitude, position.coords.latitude];
+          map.flyTo({ center: coords, zoom: 14 });
+          new mapboxgl.Marker({ color: "blue" })
+            .setLngLat(coords)
+            .addTo(map);
+        },
+        () => {
+          alert("Unable to retrieve your location.");
+        }
+      );
+    }
+
+    document.getElementById("locate").addEventListener("click", locateUser);
+    map.on('load', locateUser);
+  </script>
+</body>
+</html>
