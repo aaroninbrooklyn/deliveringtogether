@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -58,7 +59,6 @@
 
   <script>
     mapboxgl.accessToken = 'pk.eyJ1IjoiYWFyb25pbmJyb29rbHluIiwiYSI6ImNtOGowMmZ0dzBjMDgycnB4eWdhZW9nZ2sifQ.Z70awiKsIraT8Mfh-T_iAg';
-
     const map = new mapboxgl.Map({
       container: 'map',
       style: 'mapbox://styles/aaroninbrooklyn/cm8ynjmie006x01s43bs01wo2',
@@ -86,7 +86,7 @@
       }
     ];
 
-    document.getElementById("locate").addEventListener("click", () => {
+    function locateUser() {
       if (!navigator.geolocation) return alert("Geolocation not supported.");
       navigator.geolocation.getCurrentPosition(
         pos => {
@@ -96,9 +96,13 @@
         },
         () => alert("Unable to access location.")
       );
-    });
+    }
+
+    document.getElementById("locate").addEventListener("click", locateUser);
 
     map.on('load', () => {
+      locateUser();
+
       iconSources.forEach(icon => {
         map.loadImage(icon.url, (error, image) => {
           if (error) {
@@ -106,22 +110,20 @@
             return;
           }
           if (!map.hasImage(icon.id)) map.addImage(icon.id, image);
-
-          // Update layer to use icon
           map.setLayoutProperty(icon.layer, 'icon-image', icon.id);
           map.setLayoutProperty(icon.layer, 'icon-size', 0.15);
           map.setLayoutProperty(icon.layer, 'icon-allow-overlap', true);
         });
       });
 
-      map.on('mousemove', e => {
+      function showPopup(e) {
         const features = map.queryRenderedFeatures(e.point, {
           layers: iconSources.map(s => s.layer)
         });
 
+        const existing = document.getElementsByClassName('mapboxgl-popup');
         if (!features.length) {
-          const popups = document.getElementsByClassName('mapboxgl-popup');
-          if (popups.length) popups[0].remove();
+          if (existing.length) existing[0].remove();
           return;
         }
 
@@ -154,7 +156,10 @@
           .setLngLat(e.lngLat)
           .setHTML(html)
           .addTo(map);
-      });
+      }
+
+      map.on('mousemove', showPopup);
+      map.on('click', showPopup);
     });
   </script>
 </body>
