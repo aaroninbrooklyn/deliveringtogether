@@ -1,5 +1,4 @@
-# Recreate the updated HTML file with icon loading logic included
-updated_html = """
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -8,93 +7,62 @@ updated_html = """
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <link href="https://api.mapbox.com/mapbox-gl-js/v3.1.0/mapbox-gl.css" rel="stylesheet" />
   <script src="https://api.mapbox.com/mapbox-gl-js/v3.1.0/mapbox-gl.js"></script>
-  <link href="https://unpkg.com/@mapbox/mapbox-gl-geocoder@4.7.2/dist/mapbox-gl-geocoder.css" rel="stylesheet" />
-  <script src="https://unpkg.com/@mapbox/mapbox-gl-geocoder@4.7.2/dist/mapbox-gl-geocoder.min.js"></script>
   <style>
-    body,html { margin:0; padding:0; height:100%; overflow:hidden; }
-    #map { position:absolute; top:0; bottom:0; width:100%; }
+    body, html { margin: 0; padding: 0; height: 100%; }
+    #map { position: absolute; top: 0; bottom: 0; width: 100%; }
     #locate {
-      position:absolute; top:10px; left:10px; z-index:1;
-      padding:8px 12px; background:#ffeb3b; border:2px solid #000;
-      border-radius:4px; cursor:pointer; font-weight:bold;
-      box-shadow:2px 2px 4px rgba(0,0,0,0.2);
-    }
-    #geocoder {
-      position:absolute; top:50px; left:10px; z-index:1;
-      width:90vw; max-width:300px;
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      z-index: 1;
+      background: #fff;
+      padding: 8px 12px;
+      border: 1px solid #333;
+      border-radius: 4px;
+      font-weight: bold;
+      box-shadow: 1px 1px 3px rgba(0,0,0,0.3);
+      cursor: pointer;
     }
   </style>
 </head>
 <body>
   <div id="map"></div>
   <button id="locate">📍 Where am I?</button>
-  <div id="geocoder"></div>
+
   <script>
     mapboxgl.accessToken = 'pk.eyJ1IjoiYWFyb25pbmJyb29rbHluIiwiYSI6ImNtOGowMmZ0dzBjMDgycnB4eWdhZW9nZ2sifQ.Z70awiKsIraT8Mfh-T_iAg';
+
     const map = new mapboxgl.Map({
       container: 'map',
-      style: 'mapbox://styles/mapbox/streets-v12',
-      center: [-73.97, 40.68],
-      zoom: 11
+      style: 'mapbox://styles/aaroninbrooklyn/cm8ynjmie006x01s43bs01wo2',
+      center: [-73.9513, 40.6221],
+      zoom: 10.28
     });
 
     map.addControl(new mapboxgl.NavigationControl(), 'top-right');
-    map.addControl(new MapboxGeocoder({
-      accessToken: mapboxgl.accessToken,
-      mapboxgl: mapboxgl,
-      marker: false,
-      placeholder: 'Search address…'
-    }), 'top-left');
 
-    function locate() {
-      if (!navigator.geolocation) return alert('Geolocation not supported');
-      navigator.geolocation.getCurrentPosition(pos => {
-        const coords = [pos.coords.longitude, pos.coords.latitude];
-        map.flyTo({ center: coords, zoom: 14 });
-        new mapboxgl.Marker({ color: 'blue' }).setLngLat(coords).addTo(map);
-      }, () => alert('Location permission denied'));
+    function locateUser() {
+      if (!navigator.geolocation) {
+        alert("Geolocation not supported by your browser.");
+        return;
+      }
+
+      navigator.geolocation.getCurrentPosition(
+        position => {
+          const coords = [position.coords.longitude, position.coords.latitude];
+          map.flyTo({ center: coords, zoom: 14 });
+          new mapboxgl.Marker({ color: "blue" })
+            .setLngLat(coords)
+            .addTo(map);
+        },
+        () => {
+          alert("Unable to retrieve your location.");
+        }
+      );
     }
 
-    map.on('load', () => {
-      locate();
-
-      const icons = [
-        {
-          id: 'bike-parking',
-          url: 'https://raw.githubusercontent.com/aaroninbrooklyn/deliveringtogether/main/bikeparkingicon.png'
-        },
-        {
-          id: 'delivering-together',
-          url: 'https://raw.githubusercontent.com/aaroninbrooklyn/deliveringtogether/main/dtlogoicon.png'
-        },
-        {
-          id: 'toilet-map',
-          url: 'https://raw.githubusercontent.com/aaroninbrooklyn/deliveringtogether/main/toiletmapicon.png'
-        }
-      ];
-
-      icons.forEach(icon => {
-        map.loadImage(icon.url, (error, image) => {
-          if (error) {
-            console.error(`Error loading icon ${icon.id}:`, error);
-            return;
-          }
-          if (!map.hasImage(icon.id)) {
-            map.addImage(icon.id, image);
-          }
-        });
-      });
-    });
-
-    document.getElementById('locate').onclick = locate;
+    document.getElementById("locate").addEventListener("click", locateUser);
+    map.on('load', locateUser);
   </script>
 </body>
 </html>
-"""
-
-# Save the updated HTML to file
-output_path = "/mnt/data/index-updated.html"
-with open(output_path, "w") as f:
-    f.write(updated_html)
-
-output_path
