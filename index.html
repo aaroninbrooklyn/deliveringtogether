@@ -1,46 +1,51 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
   <title>Delivering Together Map</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
   <link href="https://api.mapbox.com/mapbox-gl-js/v3.1.0/mapbox-gl.css" rel="stylesheet" />
   <script src="https://api.mapbox.com/mapbox-gl-js/v3.1.0/mapbox-gl.js"></script>
   <style>
-    html, body { margin: 0; padding: 0; height: 100%; }
+    html, body { margin: 0; padding: 0; height: 100%; font-family: sans-serif; }
     #map { position: absolute; top: 0; bottom: 0; width: 100%; }
+
     #locate {
       position: absolute;
-      top: 10px;
-      left: 10px;
+      bottom: 20px;
+      left: 20px;
       z-index: 2;
       background: #ffeb3b;
-      padding: 8px 12px;
+      padding: 10px 14px;
       border: 2px solid #333;
-      border-radius: 5px;
+      border-radius: 6px;
       font-weight: bold;
-      box-shadow: 1px 1px 4px rgba(0,0,0,0.4);
+      font-size: 15px;
+      box-shadow: 2px 2px 5px rgba(0,0,0,0.4);
       cursor: pointer;
     }
+
     #instructions {
       position: absolute;
       top: 10px;
       right: 10px;
       z-index: 2;
-      background: #fff;
+      background: rgba(255,255,255,0.95);
       padding: 4px;
-      border-radius: 6px;
+      border-radius: 8px;
       box-shadow: 0 0 6px rgba(0,0,0,0.3);
     }
+
     #instructions img {
-      width: 180px;
+      width: 140px;
+      max-width: 35vw;
       height: auto;
       display: block;
     }
+
     .mapboxgl-popup {
-      max-width: 300px;
-      font: 13px/1.4 Arial, sans-serif;
+      max-width: 90vw;
+      font: 14px/1.5 sans-serif;
     }
   </style>
 </head>
@@ -53,6 +58,7 @@
 
   <script>
     mapboxgl.accessToken = 'pk.eyJ1IjoiYWFyb25pbmJyb29rbHluIiwiYSI6ImNtOGowMmZ0dzBjMDgycnB4eWdhZW9nZ2sifQ.Z70awiKsIraT8Mfh-T_iAg';
+
     const map = new mapboxgl.Map({
       container: 'map',
       style: 'mapbox://styles/aaroninbrooklyn/cm8ynjmie006x01s43bs01wo2',
@@ -62,7 +68,25 @@
 
     map.addControl(new mapboxgl.NavigationControl(), 'top-right');
 
-    function locateUser() {
+    const iconSources = [
+      {
+        id: 'bikeparkingicon',
+        url: 'https://raw.githubusercontent.com/aaroninbrooklyn/deliveringtogether/main/bikeparkingicon.png',
+        layer: 'Bicycle_Parking_20250401-cn1akk'
+      },
+      {
+        id: 'dtlogoicon',
+        url: 'https://raw.githubusercontent.com/aaroninbrooklyn/deliveringtogether/main/dtlogoicon.png',
+        layer: 'bpldeliverstrogether-28xcka'
+      },
+      {
+        id: 'toiletmapicon',
+        url: 'https://raw.githubusercontent.com/aaroninbrooklyn/deliveringtogether/main/toiletmapicon.png',
+        layer: 'Public_Restrooms_20250405-Sturqf'
+      }
+    ];
+
+    document.getElementById("locate").addEventListener("click", () => {
       if (!navigator.geolocation) return alert("Geolocation not supported.");
       navigator.geolocation.getCurrentPosition(
         pos => {
@@ -72,15 +96,27 @@
         },
         () => alert("Unable to access location.")
       );
-    }
+    });
 
-    document.getElementById("locate").addEventListener("click", locateUser);
     map.on('load', () => {
-      locateUser();
+      iconSources.forEach(icon => {
+        map.loadImage(icon.url, (error, image) => {
+          if (error) {
+            console.error(`Error loading ${icon.id}`, error);
+            return;
+          }
+          if (!map.hasImage(icon.id)) map.addImage(icon.id, image);
+
+          // Update layer to use icon
+          map.setLayoutProperty(icon.layer, 'icon-image', icon.id);
+          map.setLayoutProperty(icon.layer, 'icon-size', 0.15);
+          map.setLayoutProperty(icon.layer, 'icon-allow-overlap', true);
+        });
+      });
 
       map.on('mousemove', e => {
         const features = map.queryRenderedFeatures(e.point, {
-          layers: ['bpldeliverstrogether-28xcka', 'Public_Restrooms_20250405-Sturqf', 'Bicycle_Parking_20250401-cn1akk']
+          layers: iconSources.map(s => s.layer)
         });
 
         if (!features.length) {
@@ -89,29 +125,29 @@
           return;
         }
 
-        const feature = features[0];
+        const f = features[0];
         let html = '';
 
-        if (feature.layer.id === 'bpldeliverstrogether-28xcka') {
-          html += `<b>${feature.properties.branch}</b><br>`;
-          html += `<i>Amenities:</i> ${feature.properties.Amenities}<br>`;
-          html += `<i>Bus:</i> ${feature.properties.bus}<br>`;
-          html += `<i>Subway:</i> ${feature.properties.subway}<br>`;
+        if (f.layer.id === 'bpldeliverstrogether-28xcka') {
+          html += `<b>${f.properties.branch}</b><br>`;
+          html += `<i>Amenities:</i> ${f.properties.Amenities}<br>`;
+          html += `<i>Bus:</i> ${f.properties.bus}<br>`;
+          html += `<i>Subway:</i> ${f.properties.subway}<br>`;
           html += "<i>Hours:</i><br>";
-          html += `Mon: ${feature.properties.Monday}<br>`;
-          html += `Tue: ${feature.properties.Tuesday}<br>`;
-          html += `Wed: ${feature.properties.Wednesday}<br>`;
-          html += `Thu: ${feature.properties.Thursday}<br>`;
-          html += `Fri: ${feature.properties.Friday}<br>`;
-          html += `Sat: ${feature.properties.Saturday}<br>`;
-          html += `Sun: ${feature.properties.Sunday}<br>`;
-        } else if (feature.layer.id === 'Public_Restrooms_20250405-Sturqf') {
-          html += `<b>${feature.properties['Facility Name']}</b><br>`;
-          html += `<i>Open:</i> ${feature.properties.Open}<br>`;
-        } else if (feature.layer.id === 'Bicycle_Parking_20250401-cn1akk') {
-          html += `<b>${feature.properties.Program}</b><br>`;
-          html += `<i>Address:</i> ${feature.properties.Address}<br>`;
-          html += `<i>Rack Type:</i> ${feature.properties['Rack Type']}<br>`;
+          html += `Mon: ${f.properties.Monday}<br>`;
+          html += `Tue: ${f.properties.Tuesday}<br>`;
+          html += `Wed: ${f.properties.Wednesday}<br>`;
+          html += `Thu: ${f.properties.Thursday}<br>`;
+          html += `Fri: ${f.properties.Friday}<br>`;
+          html += `Sat: ${f.properties.Saturday}<br>`;
+          html += `Sun: ${f.properties.Sunday}<br>`;
+        } else if (f.layer.id === 'Public_Restrooms_20250405-Sturqf') {
+          html += `<b>${f.properties['Facility Name']}</b><br>`;
+          html += `<i>Open:</i> ${f.properties.Open}<br>`;
+        } else if (f.layer.id === 'Bicycle_Parking_20250401-cn1akk') {
+          html += `<b>${f.properties.Program}</b><br>`;
+          html += `<i>Address:</i> ${f.properties.Address}<br>`;
+          html += `<i>Rack Type:</i> ${f.properties['Rack Type']}<br>`;
         }
 
         new mapboxgl.Popup({ closeButton: false, closeOnClick: false })
