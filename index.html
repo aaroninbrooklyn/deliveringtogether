@@ -1,24 +1,15 @@
+# Recreate the updated HTML file with icon loading logic included
+updated_html = """
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
   <title>Delivering Together Map</title>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-
-  <!-- 1) Mapbox GL JS core -->
-  <link
-    href="https://api.mapbox.com/mapbox-gl-js/v3.1.0/mapbox-gl.css"
-    rel="stylesheet"
-  />
+  <link href="https://api.mapbox.com/mapbox-gl-js/v3.1.0/mapbox-gl.css" rel="stylesheet" />
   <script src="https://api.mapbox.com/mapbox-gl-js/v3.1.0/mapbox-gl.js"></script>
-
-  <!-- 2) Geocoder plugin v4.7.2 -->
-  <link
-    href="https://unpkg.com/@mapbox/mapbox-gl-geocoder@4.7.2/dist/mapbox-gl-geocoder.css"
-    rel="stylesheet"
-  />
+  <link href="https://unpkg.com/@mapbox/mapbox-gl-geocoder@4.7.2/dist/mapbox-gl-geocoder.css" rel="stylesheet" />
   <script src="https://unpkg.com/@mapbox/mapbox-gl-geocoder@4.7.2/dist/mapbox-gl-geocoder.min.js"></script>
-
   <style>
     body,html { margin:0; padding:0; height:100%; overflow:hidden; }
     #map { position:absolute; top:0; bottom:0; width:100%; }
@@ -38,9 +29,7 @@
   <div id="map"></div>
   <button id="locate">📍 Where am I?</button>
   <div id="geocoder"></div>
-
   <script>
-    // Initialize map
     mapboxgl.accessToken = 'pk.eyJ1IjoiYWFyb25pbmJyb29rbHluIiwiYSI6ImNtOGowMmZ0dzBjMDgycnB4eWdhZW9nZ2sifQ.Z70awiKsIraT8Mfh-T_iAg';
     const map = new mapboxgl.Map({
       container: 'map',
@@ -48,9 +37,8 @@
       center: [-73.97, 40.68],
       zoom: 11
     });
-    map.addControl(new mapboxgl.NavigationControl(), 'top-right');
 
-    // Add Geocoder
+    map.addControl(new mapboxgl.NavigationControl(), 'top-right');
     map.addControl(new MapboxGeocoder({
       accessToken: mapboxgl.accessToken,
       mapboxgl: mapboxgl,
@@ -58,19 +46,55 @@
       placeholder: 'Search address…'
     }), 'top-left');
 
-    // Geolocate on load and via button
     function locate() {
       if (!navigator.geolocation) return alert('Geolocation not supported');
       navigator.geolocation.getCurrentPosition(pos => {
         const coords = [pos.coords.longitude, pos.coords.latitude];
         map.flyTo({ center: coords, zoom: 14 });
-        new mapboxgl.Marker({ color: 'blue' })
-          .setLngLat(coords)
-          .addTo(map);
+        new mapboxgl.Marker({ color: 'blue' }).setLngLat(coords).addTo(map);
       }, () => alert('Location permission denied'));
     }
-    map.on('load', locate);
+
+    map.on('load', () => {
+      locate();
+
+      const icons = [
+        {
+          id: 'bike-parking',
+          url: 'https://raw.githubusercontent.com/aaroninbrooklyn/deliveringtogether/main/bikeparkingicon.png'
+        },
+        {
+          id: 'delivering-together',
+          url: 'https://raw.githubusercontent.com/aaroninbrooklyn/deliveringtogether/main/dtlogoicon.png'
+        },
+        {
+          id: 'toilet-map',
+          url: 'https://raw.githubusercontent.com/aaroninbrooklyn/deliveringtogether/main/toiletmapicon.png'
+        }
+      ];
+
+      icons.forEach(icon => {
+        map.loadImage(icon.url, (error, image) => {
+          if (error) {
+            console.error(`Error loading icon ${icon.id}:`, error);
+            return;
+          }
+          if (!map.hasImage(icon.id)) {
+            map.addImage(icon.id, image);
+          }
+        });
+      });
+    });
+
     document.getElementById('locate').onclick = locate;
   </script>
 </body>
 </html>
+"""
+
+# Save the updated HTML to file
+output_path = "/mnt/data/index-updated.html"
+with open(output_path, "w") as f:
+    f.write(updated_html)
+
+output_path
