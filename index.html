@@ -53,7 +53,7 @@
   <div id="map"></div>
   <button id="locate">📍 Where am I?</button>
   <div id="instructions">
-    <img src="https://raw.githubusercontent.com/aaroninbrooklyn/deliveringtogether/912c10b2287621414bb086f30897f2a0cc55c3e9/dtlanguage.gif" alt="Instructions">
+    <img src="https://raw.githubusercontent.com/aaroninbrooklyn/deliveringtogether/main/dtlanguage.gif" alt="Instructions">
   </div>
 
   <script>
@@ -68,24 +68,12 @@
 
     map.addControl(new mapboxgl.NavigationControl(), 'top-right');
 
-    const iconList = [
-      {
-        id: 'bikeparkingicon',
-        url: 'https://raw.githubusercontent.com/aaroninbrooklyn/deliveringtogether/main/bikeparkingicon.png'
-      },
-      {
-        id: 'dtlogoicon',
-        url: 'https://raw.githubusercontent.com/aaroninbrooklyn/deliveringtogether/main/dtlogoicon.png'
-      },
-      {
-        id: 'toiletmapicon',
-        url: 'https://raw.githubusercontent.com/aaroninbrooklyn/deliveringtogether/main/toiletmapicon.png'
-      },
-      {
-        id: 'bpllogoicon',
-        url: 'https://raw.githubusercontent.com/aaroninbrooklyn/deliveringtogether/main/bpllogoicon.png'
-      }
-    ];
+    const icons = {
+      bikeparking: 'https://raw.githubusercontent.com/aaroninbrooklyn/deliveringtogether/main/bikeparkingicon.png',
+      dtlogo: 'https://raw.githubusercontent.com/aaroninbrooklyn/deliveringtogether/main/dtlogoicon.png',
+      toiletmap: 'https://raw.githubusercontent.com/aaroninbrooklyn/deliveringtogether/main/toiletmapicon.png',
+      bpllogo: 'https://raw.githubusercontent.com/aaroninbrooklyn/deliveringtogether/main/bpllogoicon.png'
+    };
 
     document.getElementById("locate").addEventListener("click", () => {
       if (!navigator.geolocation) return alert("Geolocation not supported.");
@@ -100,30 +88,25 @@
     });
 
     map.on('load', () => {
-      // Load icons
-      iconList.forEach(icon => {
-        map.loadImage(icon.url, (error, image) => {
-          if (error) {
-            console.error(`Error loading ${icon.id}`, error);
-            return;
-          }
-          if (!map.hasImage(icon.id)) map.addImage(icon.id, image);
+      Object.entries(icons).forEach(([id, url]) => {
+        map.loadImage(url, (error, image) => {
+          if (error || !image) return console.error("Image load failed:", url);
+          if (!map.hasImage(id)) map.addImage(id, image);
         });
       });
 
-      // Conditional icon expression for DT vs BPL branches
       map.setLayoutProperty('bpldeliverstrogether-28xcka', 'icon-image', [
         'match',
-        ['get', 'delivering together'],
-        'Delivering Together', 'dtlogoicon',
-        'BPL Branch', 'bpllogoicon',
-        'bpllogoicon'
+        ['downcase', ['get', 'Delivering Together']],
+        'delivering together', 'dtlogo',
+        'bpl branch', 'bpllogo',
+        'bpllogo'
       ]);
       map.setLayoutProperty('bpldeliverstrogether-28xcka', 'icon-size', 0.15);
       map.setLayoutProperty('bpldeliverstrogether-28xcka', 'icon-allow-overlap', true);
-      map.setLayoutProperty('Public_Restrooms_20250405-Sturqf', 'icon-image', 'toiletmapicon');
-      map.setLayoutProperty('Bicycle_Parking_20250401-cn1akk', 'icon-image', 'bikeparkingicon');
+      map.setLayoutProperty('Public_Restrooms_20250405-Sturqf', 'icon-image', 'toiletmap');
       map.setLayoutProperty('Public_Restrooms_20250405-Sturqf', 'icon-size', 0.15);
+      map.setLayoutProperty('Bicycle_Parking_20250401-cn1akk', 'icon-image', 'bikeparking');
       map.setLayoutProperty('Bicycle_Parking_20250401-cn1akk', 'icon-size', 0.15);
 
       function showPopup(e) {
@@ -135,11 +118,7 @@
           ]
         });
 
-        const existing = document.getElementsByClassName('mapboxgl-popup');
-        if (!features.length) {
-          if (existing.length) existing[0].remove();
-          return;
-        }
+        if (!features.length) return;
 
         const f = features[0];
         let html = '';
@@ -166,14 +145,14 @@
           html += `<i>Rack Type:</i> ${f.properties['Rack Type']}<br>`;
         }
 
-        new mapboxgl.Popup({ closeButton: false, closeOnClick: false })
+        new mapboxgl.Popup({ closeButton: false })
           .setLngLat(e.lngLat)
           .setHTML(html)
           .addTo(map);
       }
 
-      map.on('mousemove', showPopup);
       map.on('click', showPopup);
+      map.on('touchstart', showPopup);
     });
   </script>
 </body>
