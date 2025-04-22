@@ -72,7 +72,8 @@
       bikeparking: 'https://raw.githubusercontent.com/aaroninbrooklyn/deliveringtogether/main/bikeparkingicon.png',
       dtlogo: 'https://raw.githubusercontent.com/aaroninbrooklyn/deliveringtogether/main/dtlogoicon.png',
       toiletmap: 'https://raw.githubusercontent.com/aaroninbrooklyn/deliveringtogether/main/toiletmapicon.png',
-      bpllogo: 'https://raw.githubusercontent.com/aaroninbrooklyn/deliveringtogether/main/bpllogoicon.png'
+      bpllogo: 'https://raw.githubusercontent.com/aaroninbrooklyn/deliveringtogether/main/bpllogoicon.png',
+      bplbranch: 'https://raw.githubusercontent.com/aaroninbrooklyn/deliveringtogether/main/bpldeliverstrogether-28xcka.png' //  NEW ICON URL
     };
 
     document.getElementById("locate").addEventListener("click", () => {
@@ -83,76 +84,95 @@
           map.flyTo({ center: coords, zoom: 14 });
           new mapboxgl.Marker({ color: 'blue' }).setLngLat(coords).addTo(map);
         },
-        () => alert("Unable to access location.")
+        (error) => { // Handle errors properly
+          console.error("Geolocation error:", error);
+          alert("Unable to access location. Please ensure location services are enabled.");
+        }
       );
     });
 
     map.on('load', () => {
-      Object.entries(icons).forEach(([id, url]) => {
+      let imagesLoaded = 0;
+      const totalImages = Object.keys(icons).length;
+
+      for (const [id, url] of Object.entries(icons)) {
         map.loadImage(url, (error, image) => {
-          if (error || !image) return console.error("Image load failed:", url);
-          if (!map.hasImage(id)) map.addImage(id, image);
+          if (error) {
+            console.error("Image load failed:", id, url, error);
+            // Optionally handle the error, e.g., use a default image or skip the layer
+          } else if (image) {
+            if (!map.hasImage(id)) map.addImage(id, image);
+          }
+
+          imagesLoaded++;
+          if (imagesLoaded === totalImages) {
+            //  All images are loaded, now it's safe to set up layers
+            setUpLayers();
+          }
         });
-      });
-
-      map.setLayoutProperty('bpldeliverstrogether-28xcka', 'icon-image', [
-        'match',
-        ['downcase', ['get', 'Delivering Together']],
-        'delivering together', 'dtlogo',
-        'bpl branch', 'bpllogo',
-        'bpllogo'
-      ]);
-      map.setLayoutProperty('bpldeliverstrogether-28xcka', 'icon-size', 0.15);
-      map.setLayoutProperty('bpldeliverstrogether-28xcka', 'icon-allow-overlap', true);
-      map.setLayoutProperty('Public_Restrooms_20250405-Sturqf', 'icon-image', 'toiletmap');
-      map.setLayoutProperty('Public_Restrooms_20250405-Sturqf', 'icon-size', 0.15);
-      map.setLayoutProperty('Bicycle_Parking_20250401-cn1akk', 'icon-image', 'bikeparking');
-      map.setLayoutProperty('Bicycle_Parking_20250401-cn1akk', 'icon-size', 0.15);
-
-      function showPopup(e) {
-        const features = map.queryRenderedFeatures(e.point, {
-          layers: [
-            'bpldeliverstrogether-28xcka',
-            'Public_Restrooms_20250405-Sturqf',
-            'Bicycle_Parking_20250401-cn1akk'
-          ]
-        });
-
-        if (!features.length) return;
-
-        const f = features[0];
-        let html = '';
-
-        if (f.layer.id === 'bpldeliverstrogether-28xcka') {
-          html += `<b>${f.properties.branch}</b><br>`;
-          html += `<i>Amenities:</i> ${f.properties.Amenities}<br>`;
-          html += `<i>Bus:</i> ${f.properties.bus}<br>`;
-          html += `<i>Subway:</i> ${f.properties.subway}<br>`;
-          html += "<i>Hours:</i><br>";
-          html += `Mon: ${f.properties.Monday}<br>`;
-          html += `Tue: ${f.properties.Tuesday}<br>`;
-          html += `Wed: ${f.properties.Wednesday}<br>`;
-          html += `Thu: ${f.properties.Thursday}<br>`;
-          html += `Fri: ${f.properties.Friday}<br>`;
-          html += `Sat: ${f.properties.Saturday}<br>`;
-          html += `Sun: ${f.properties.Sunday}<br>`;
-        } else if (f.layer.id === 'Public_Restrooms_20250405-Sturqf') {
-          html += `<b>${f.properties['Facility Name']}</b><br>`;
-          html += `<i>Open:</i> ${f.properties.Open}<br>`;
-        } else if (f.layer.id === 'Bicycle_Parking_20250401-cn1akk') {
-          html += `<b>${f.properties.Program}</b><br>`;
-          html += `<i>Address:</i> ${f.properties.Address}<br>`;
-          html += `<i>Rack Type:</i> ${f.properties['Rack Type']}<br>`;
-        }
-
-        new mapboxgl.Popup({ closeButton: false })
-          .setLngLat(e.lngLat)
-          .setHTML(html)
-          .addTo(map);
       }
 
-      map.on('click', showPopup);
-      map.on('touchstart', showPopup);
+      function setUpLayers() {
+        map.setLayoutProperty('bpldeliverstrogether-28xcka', 'icon-image', [
+          'match',
+          ['downcase', ['get', 'Delivering Together']],
+          'delivering together', 'dtlogo',
+          'bpl branch', 'bplbranch',  //  USE THE NEW ICON
+          'bpllogo' // Default icon if no match
+        ]);
+        map.setLayoutProperty('bpldeliverstrogether-28xcka', 'icon-size', 0.15);
+        map.setLayoutProperty('bpldeliverstrogether-28xcka', 'icon-allow-overlap', true);
+        map.setLayoutProperty('Public_Restrooms_20250405-Sturqf', 'icon-image', 'toiletmap');
+        map.setLayoutProperty('Public_Restrooms_20250405-Sturqf', 'icon-size', 0.15);
+        map.setLayoutProperty('Bicycle_Parking_20250401-cn1akk', 'icon-image', 'bikeparking');
+        map.setLayoutProperty('Bicycle_Parking_20250401-cn1akk', 'icon-size', 0.15);
+
+
+        function showPopup(e) {
+          const features = map.queryRenderedFeatures(e.point, {
+            layers: [
+              'bpldeliverstrogether-28xcka',
+              'Public_Restrooms_20250405-Sturqf',
+              'Bicycle_Parking_20250401-cn1akk'
+            ]
+          });
+
+          if (!features.length) return;
+
+          const f = features[0];
+          let html = '';
+
+          if (f.layer.id === 'bpldeliverstrogether-28xcka') {
+            html += `<b>${f.properties.branch || 'N/A'}</b><br>`;
+            html += `<i>Amenities:</i> ${f.properties.Amenities || 'N/A'}<br>`;
+            html += `<i>Bus:</i> ${f.properties.bus || 'N/A'}<br>`;
+            html += `<i>Subway:</i> ${f.properties.subway || 'N/A'}<br>`;
+            html += "<i>Hours:</i><br>";
+            html += `Mon: ${f.properties.Monday || 'N/A'}<br>`;
+            html += `Tue: ${f.properties.Tuesday || 'N/A'}<br>`;
+            html += `Wed: ${f.properties.Wednesday || 'N/A'}<br>`;
+            html += `Thu: ${f.properties.Thursday || 'N/A'}<br>`;
+            html += `Fri: ${f.properties.Friday || 'N/A'}<br>`;
+            html += `Sat: ${f.properties.Saturday || 'N/A'}<br>`;
+            html += `Sun: ${f.properties.Sunday || 'N/A'}<br>`;
+          } else if (f.layer.id === 'Public_Restrooms_20250405-Sturqf') {
+            html += `<b>${f.properties['Facility Name'] || 'N/A'}</b><br>`;
+            html += `<i>Open:</i> ${f.properties.Open || 'N/A'}<br>`;
+          } else if (f.layer.id === 'Bicycle_Parking_20250401-cn1akk') {
+            html += `<b>${f.properties.Program || 'N/A'}</b><br>`;
+            html += `<i>Address:</i> ${f.properties.Address || 'N/A'}<br>`;
+            html += `<i>Rack Type:</i> ${f.properties['Rack Type'] || 'N/A'}<br>`;
+          }
+
+          new mapboxgl.Popup({ closeButton: false })
+            .setLngLat(e.lngLat)
+            .setHTML(html)
+            .addTo(map);
+        }
+
+        map.on('click', showPopup);
+        map.on('touchstart', showPopup);
+      }
     });
   </script>
 </body>
